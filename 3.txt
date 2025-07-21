@@ -1,0 +1,56 @@
+sudo apt update && sudo apt install samba samba-dsdb-modules samba-vfs-modules winbind krb5-config krb5-user dnsutils -y
+
+sudo systemctl stop samba-ad-dc smbd nmbd winbind
+sudo systemctl disable smbd nmbd winbind
+sudo rm -rf /etc/samba/smb.conf
+sudo rm -rf /var/lib/samba/*
+sudo rm -rf /var/cache/samba/*
+
+sudo samba-tool domain provision --use-rfc2307 --realm=SO3.INET --domain=SO3 --server-role=dc --dns-backend=SAMBA_INTERNAL --adminpass='Admin12345!'
+
+sudo systemctl unmask samba-ad-dc
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+sudo systemctl status samba-ad-dc
+
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+echo "search SO3.INET" | sudo tee -a /etc/resolv.conf
+
+sudo nano /etc/krb5.conf
+[libdefaults]
+    default_realm = SO3.INET
+    dns_lookup_realm = false
+    dns_lookup_kdc = true
+
+[realms]
+    SO3.INET = {
+        kdc = 192.168.1.236
+        admin_server = 192.168.1.236
+    }
+
+[domain_realm]
+    .so3.inet = SO3.INET
+    so3.inet = SO3.INET
+
+
+
+
+
+kinit administrator@SO3.INET
+klist
+
+sudo samba-tool user create lanegracubana 20241309
+sudo samba-tool user enable lanegracubana
+
+host -t SRV _ldap._tcp.SO3.INET
+
+sudo ufw allow 53,88,135,139,389,445/tcp
+sudo ufw allow 53,88,137,138,389,445/udp
+sudo ufw disable
+
+sudo samba-tool user list
+sudo samba-tool computer list
+
+
+
+

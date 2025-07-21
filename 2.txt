@@ -1,0 +1,25 @@
+sudo apt update
+sudo apt install samba -y
+sudo systemctl enable smbd
+sudo systemctl start smbd
+sudo systemctl status smbd
+
+sudo mkdir /home/samba_compartida
+sudo chmod -R 777 /home/samba_compartida
+
+sudo groupadd sambagrupo
+sudo useradd -M -s /sbin/nologin adrian -G sambagrupo
+sudo smbpasswd -a adrian
+
+sudo chown -R root:sambagrupo /home/samba_compartida
+sudo chmod -R 770 /home/samba_compartida
+
+sudo nano /etc/samba/smb.conf
+
+sudo systemctl restart smbd
+
+cd /home/samba_compartida
+sudo bash -c 'for i in {1..100}; do echo "Archivo $i" > "adrian${i}.txt"; done'
+ls /home/samba_compartida
+
+cat /home/samba_compartida/adrian99.txt

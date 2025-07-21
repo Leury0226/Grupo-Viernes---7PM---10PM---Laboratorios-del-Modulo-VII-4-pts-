@@ -1,0 +1,35 @@
+sudo apt update
+sudo apt install nfs-kernel-server -y
+
+sudo mkdir /home/OS3
+sudo chmod -R 777 /home/OS3
+cd /home/OS3
+sudo bash -c 'for i in {1..100}; do echo "Archivo $i" > "Adrian${i}.txt"; done'
+ls /home/OS3
+
+sudo chown -R nobody:nogroup /home/OS3
+sudo chmod -R 777 /home/OS3
+
+sudo nano /etc/exports
+# (agregar: /home/OS3    *(rw,sync,no_subtree_check) )
+
+sudo exportfs -a
+sudo systemctl restart nfs-kernel-server
+sudo systemctl status nfs-kernel-server
+
+
+CLIENTE:
+
+sudo apt update
+sudo apt install nfs-common -y
+
+sudo mkdir /mnt/OS3
+sudo mount 192.168.100.7:/home/OS3 /mnt/OS3
+ls /mnt/OS3
+
+sudo nano /etc/fstab
+# (agregar: 192.168.100.7:/home/OS3   /mnt/OS3   nfs   defaults   0   0)
+
+sudo reboot
+ls /mnt/OS3
+
