@@ -33,3 +33,97 @@ sudo nano /etc/fstab
 sudo reboot
 ls /mnt/OS3
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ===============================
+# CREAR Y MONTAR EL NUEVO DISCO EN KALI1
+# ===============================
+
+lsblk                                    # Ver discos disponibles, buscar el nuevo (ej: /dev/sdb)
+sudo mkfs.ext4 /dev/sdb                  # Formatear el nuevo disco con EXT4
+sudo mount /dev/sdb /mnt                  # Montar el disco en /mnt
+
+sudo nano /etc/fstab                      # Editar para montaje automático
+# Dentro de /etc/fstab agregar la línea:
+# /dev/sdb   /mnt   ext4   defaults   0   0
+
+# ===============================
+# CONFIGURAR NFS EN KALI1 (SERVIDOR)
+# ===============================
+
+sudo apt update
+sudo apt install nfs-kernel-server -y     # Instalar servidor NFS
+
+sudo nano /etc/exports                    # Editar configuración de exportación
+# Agregar (reemplaza IP_KALI2 por la IP real de Kali2):
+/mnt    IP_KALI2(rw,sync,no_subtree_check)
+
+sudo exportfs -a                          # Aplicar cambios
+sudo systemctl restart nfs-kernel-server  # Reiniciar NFS
+
+# ===============================
+# CONFIGURAR NFS EN KALI2 (CLIENTE)
+# ===============================
+
+sudo apt install nfs-common -y            # Instalar cliente NFS
+sudo mount IP_KALI1:/mnt /mnt              # Montar carpeta de Kali1 en /mnt
+sudo nano /etc/fstab                       # Editar para montaje automático
+# Agregar:
+# IP_KALI1:/mnt    /mnt    nfs    defaults    0    0
+
+# ===============================
+# CONFIGURAR SAMBA EN KALI1 (PARA WINDOWS)
+# ===============================
+
+sudo apt install samba -y                  # Instalar Samba
+sudo nano /etc/samba/smb.conf               # Editar configuración de Samba
+
+# Al final agregar:
+
+ [Compartido]
+     path = /mnt
+     browseable = yes
+     read only = no
+     guest ok = yes
+     force user = nobody
+
+
+sudo systemctl restart smbd                 # Reiniciar Samba
+sudo ufw allow samba                        # Permitir Samba en el firewall (si aplica)
+
+# ===============================
+# PRUEBA DE ARCHIVOS DESDE KALI1
+# ===============================
+
+echo "Hola desde Kali1" | sudo tee /mnt/prueba_kali1.txt   # Crear archivo desde Kali1
+ls -l /mnt                                                  # Verificar que existe
+
+# ===============================
+# PRUEBA DE ARCHIVOS DESDE KALI2
+# ===============================
+
+echo "Hola desde Kali2" | sudo tee /mnt/prueba_kali2.txt   # Crear archivo desde Kali2
+ls -l /mnt                                                  # Verificar que existe
+
+# ===============================
+# PRUEBA DE ARCHIVOS DESDE WINDOWS
+# ===============================
+# En Windows presionar Win + R y escribir:
+# \\IP_KALI1\Compartido
+# Luego crear un archivo "prueba_windows.txt" y escribir "Hola desde Windows"
+
